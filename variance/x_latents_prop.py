@@ -279,17 +279,6 @@ def propagate_embeddings(model, data, node_types_option, target_node_type):
         return {target_node_type: x_latents_dict[target_node_type]}
     else:
         raise ValueError(f"Invalid node_types_option: {node_types_option}")
-
-
-def seed_everything(seed: int):
-    """Set the seed for reproducibility."""
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed_all(seed)
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
     
 def main(args):
     # Load dataset
@@ -304,8 +293,7 @@ def main(args):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     data = data.to(device)
 
-    # add seed_everything
-
+    pyg.seed_everything(seed=42)
 
     # Create model
     if args.model_type == 'pnrgcn':

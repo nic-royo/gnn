@@ -1,0 +1,21 @@
+#!/bin/bash
+
+#SBATCH --job-name=sweep-container-gpu    # Job name
+#SBATCH --output=outputs/bayes_sweep_mag_job.%j.out # Name of output file (%j expands to jobId)
+#SBATCH --cpus-per-task=2                 # Number of CPU cores per task
+#SBATCH --gres=gpu:1           # Request 1 GPU or a specific ie. a100_40gb:4, use freeResources to see which are open, then choose node after : 
+#SBATCH --time=24:00:00                   # Run time (hh:mm:ss) - run for 48 hours max
+#SBATCH --partition=brown                 # Partition name
+#SBATCH --mail-type=FAIL,END              # Mail events (NONE, BEGIN, END, FAIL, ALL)
+#SBATCH --mem=80G
+#SBATCH --reservation=desktop27
+
+module load singularity
+export WANDB_API_KEY=4e8cb6191f0ce50becd1fde96d5c4caf25f6ecfc
+
+singularity exec --nv /opt/itu/containers/pytorch/latest python3 rgcn_base/hyper_param.py \
+  --dataset mag \
+  --data_root /tmp/ \
+  --print_every 10
+
+#sbatch rgcn_base/hpc_hyperparam.job

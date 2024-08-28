@@ -18,7 +18,8 @@ from torch import Tensor
 import matplotlib.pyplot as plt
 import seaborn as sns
 from torch_geometric.nn import RGCNConv, norm as geom_norm  # Added import for PairNorm
-
+import os
+import pandas as pd
 
 class RGCN(nn.Module):
     def __init__(self, metadata, hidden_dim, out_dim, num_bases, dropout=0.8, num_layers=2):
@@ -67,7 +68,7 @@ class RGCN(nn.Module):
             x_latents.append(x.detach())
         x = self.convs[-1](x, edge_index, edge_type)
         return x, x_latents
- 
+
 class pairnormRGCN(nn.Module):
     def __init__(self, metadata, hidden_dim, out_dim, num_bases, dropout=0.8, num_layers=2):
         super(pairnormRGCN, self).__init__()
@@ -264,7 +265,7 @@ def train(model, optimizer, data, target_node_type):
     model.train()
     optimizer.zero_grad()
     out, _ = model(data.x_dict, data)
-    target_out = out[:data[target_node_type].num_nodes]
+    target_out = out[target_node_type]
     loss = F.cross_entropy(target_out[data[target_node_type].train_mask],
                            data[target_node_type].y[data[target_node_type].train_mask])
     loss.backward()
@@ -275,7 +276,7 @@ def val(model, data, target_node_type):
     model.eval()
     with torch.no_grad():
         out, _ = model(data.x_dict, data)
-        target_out = out[:data[target_node_type].num_nodes]
+        target_out = out[target_node_type]
         pred = target_out.argmax(dim=1)
         correct = pred[data[target_node_type].val_mask] == data[target_node_type].y[data[target_node_type].val_mask]
         acc = int(correct.sum()) / int(data[target_node_type].val_mask.sum())
@@ -283,8 +284,8 @@ def val(model, data, target_node_type):
                       pred[data[target_node_type].val_mask].cpu().numpy(), average='micro')
     return acc, f1
 
-def train_model(model, data, target_node_type, epochs=10, learning_rate=0.01):
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+def train_model(model, data, target_node_type, epochs=10, learning_rate=0.01, weight_decay=5e-4):
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
     best_f1 = 0
     best_model = None
@@ -301,67 +302,95 @@ def train_model(model, data, target_node_type, epochs=10, learning_rate=0.01):
 
     # Load the best model
     model.load_state_dict(best_model)
+    return model
 
 def main(args):
+    # Load dataset
     data = load_dataset(args.dataset, root=args.data_root)
 
+    # Get target node type and number of classes
     target_node_type = get_target_node_type(args.dataset)
     num_classes = get_num_classes(data, target_node_type)
 
+    # Set device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     data = data.to(device)
+
+    pyg.seed_everything(seed=42)
 
     # Create model
     if args.model_type == 'pnrgcn':
         model = pairnormRGCN(data.metadata(), args.hidden_dim, num_classes,
-                             args.num_bases, dropout=args.dropout, num_layers=args.num_hops).to(device)
-    elif args.model_type == 'resrgcn':
-        model = resRGCN(data.metadata(), args.hidden_dim, num_classes,
-                        args.num_bases, dropout=args.dropout, num_layers=args.num_hops).to(device)
+                             args.num_bases, num_layers=args.num_hops).to(device)
+    elif args.model_type == 'rgcn':
+        model = RGCN(data.metadata(), args.hidden_dim, num_classes,
+                     args.num_bases, num_layers=args.num_hops).to(device)
     else:
         print("Model not found")
         return  # Exit the function if the model is not found
     
     print(model)
 
-    if args.train:
-        print("Training the model...")
-        train_model(model, data, target_node_type, epochs=args.epochs, learning_rate=args.learning_rate)
-    else:
-        print("Only propagating the embeddings...")
+    print("Training the model...")
+    model = train_model(model, data, target_node_type, epochs=args.epochs, learning_rate=args.learning_rate, weight_decay=args.weight_decay)
 
-    pyg.seed_everything(250)
-    _, x_latents = model(data.x_dict, data)
+    print("Generating node embeddings...")
+    model.eval()
+    with torch.no_grad():
+        _, x_latents = model(data.x_dict, data)
+    
+    # Ensure x_latents is a dictionary mapping node types to their embeddings
+    x_latents_dict = {node_type: x_latent for node_type, x_latent in x_latents.items()}
+    
+    if args.node_types_option == 'all_node_types':
+        pass  # Keep all node types
+    elif args.node_types_option == 'target_node_type':
+        x_latents_dict = {target_node_type: x_latents_dict[target_node_type]}
+    else:
+        raise ValueError(f"Invalid node_types_option: {args.node_types_option}")
 
     # Conditionally normalize the embeddings
     if args.embedding_option == 'normalize':
-        x_latents = [F.normalize(x_latent, p=2, dim=1) for x_latent in x_latents]
+        x_latents_dict = {node_type: F.normalize(x_latent, p=2, dim=1) for node_type, x_latent in x_latents_dict.items()}
     
-    x_latents_np = [x_latent.detach().cpu().numpy() for x_latent in x_latents]
+    # Convert embeddings to numpy arrays
+    x_latents_np = {node_type: x_latent.detach().cpu().numpy() for node_type, x_latent in x_latents_dict.items()}
 
-    # Select 50 target nodes from the final layer's embeddings OR random sampled 50 nodes
-    if args.random_sample is True:
-        # Random sample 
-        num_target_nodes = data[target_node_type].num_nodes
-        target_node_indices = torch.randperm(num_target_nodes)[:50]
-    else:
-        # Or first 50 nodes
-        target_node_indices = torch.arange(50)
-    final_layer_embeddings = x_latents_np[-1][target_node_indices]
+    all_embeddings = []
+    all_node_indices = []
 
-    plt.figure(figsize=(15, 10))
-    sns.heatmap(final_layer_embeddings, cmap='coolwarm', cbar=True, yticklabels=[f'Node {i}' for i in target_node_indices])
+    for node_type, embeddings in x_latents_np.items():
+        # Select node indices
+        num_nodes = data[node_type].num_nodes
+        if args.use_all_nodes:
+            node_indices = torch.arange(num_nodes)
+        else:
+            node_indices = torch.randperm(num_nodes)[:50]
 
-    plt.xlabel("Features")
-    plt.ylabel("Nodes")
-    #title = f"{args.dataset}, {args.num_hops} layers, {'normalized' if args.embedding_option == 'normalize' else 'not normalized'}, {args.model_type} model, {'trained' if args.train else 'propagated'}, {'random sampled' if args.random_sample else 'first 50'}"
-    title = f"{args.num_hops} Layers"    
-    plt.title(title)
-    filename = f"final_plots/minecraft_dblp/{args.model_type}_{'norm' if args.embedding_option == 'normalize' else 'notnorm'}_{'trained' if args.train else 'propagated'}_{args.num_hops}_layer_{args.dataset}_{'random_sample' if args.random_sample else 'first50'}.svg"
-    plt.savefig(filename)
-    plt.show()
+        # Get final layer embeddings
+        final_layer_embeddings = embeddings[node_indices]
+        
+        # Create DataFrame with node type and embeddings
+        df = pd.DataFrame(final_layer_embeddings, index=[f'{node_type}_Node_{i}' for i in node_indices])
+        df['Node_Type'] = node_type  # Add a column for node type
+        all_embeddings.append(df)
+        all_node_indices.append(node_indices)
+    
+    # Combine all DataFrames into one
+    combined_df = pd.concat(all_embeddings, axis=0)
 
-    print('Finished.')
+    # Construct the output directory and filename
+    output_dir = f"results/train_embeddings/{args.dataset}_{args.model_type}"
+    os.makedirs(output_dir, exist_ok=True)  # Create directory if it does not exist
+
+    file_suffix = f"_{args.num_hops}_layer_all_nodes_{'norm' if args.embedding_option == 'normalize' else 'notnorm'}.csv"
+    csv_filename = os.path.join(output_dir, f"{args.dataset}_{args.model_type}{file_suffix}")
+
+    # Save the combined DataFrame to CSV
+    combined_df.to_csv(csv_filename)
+
+    print(f'All node embeddings saved to {csv_filename}')
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='RGCN for Heterogeneous Datasets')
@@ -372,12 +401,13 @@ if __name__ == "__main__":
     parser.add_argument('--dropout', type=float, default=0.5, help='Dropout rate')
     parser.add_argument('--num_hops', type=int, default=32, help='Number of hops in RGCN')
     parser.add_argument('--embedding_option', type=str, required=True, choices=['normalize', 'no_normalize'], help='Option to either normalize or not normalize the embeddings')
+    parser.add_argument('--use_all_nodes', type=lambda x: x.lower() == 'true', default=True, help='Whether to use all nodes or a random sample of 50 nodes')
+    parser.add_argument('--node_types_option', type=str, default='all_node_types', choices=['all_node_types', 'target_node_type'], help='Whether to save embeddings for all node types or just the target node type')    
     parser.add_argument('--epochs', type=int, default=10, help='Number of training epochs')
     parser.add_argument('--train', type=bool, required=True, help='Whether to train the model (True or False)')
     parser.add_argument('--learning_rate', type=float, default=0.01, help='Learning rate for training')
     parser.add_argument('--weight_decay', type=float, default=0.00005, help='Weight decay')
     parser.add_argument('--model_type', type=str, default='rgcn', choices=['rgcn', 'pnrgcn', 'resrgcn', 'ggrgcn'], help='Type of RGCN model to use')
-    parser.add_argument('--random_sample', type=lambda x: x.lower() == 'true', default=False, help='Whether to randomly sample 50 nodes for visualization (True or False)')
 
     args = parser.parse_args()
     main(args)
