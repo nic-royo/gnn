@@ -1,0 +1,15 @@
+#!/bin/bash
+
+#SBATCH --job-name=container-gpu    # Job name
+#SBATCH --output=outputs/files_combined.%j.out       # Name of output file (%j expands to jobId)
+#SBATCH --cpus-per-task=2        # Schedule 8 cores (includes hyperthreading)
+#SBATCH --gres=gpu:1               # Schedule a GPU, or more with gpu:2 etc
+#SBATCH --time=24:00:00          # Run time (hh:mm:ss) - run for one hour max
+#SBATCH --partition=brown
+#SBATCH --mail-type=FAIL, END
+
+module load singularity
+singularity exec --nv /opt/itu/containers/pytorch/latest python3 3xruns/file_combiner.py
+
+
+#sbatch 3xruns/file_combiner.job
