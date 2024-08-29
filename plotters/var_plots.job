@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --job-name=de_test    # Job name
-#SBATCH --output=outputs.%j.out # Name of output file (%j expands to jobId)
+#SBATCH --output=outputs/.%j.out # Name of output file (%j expands to jobId)
 #SBATCH --cpus-per-task=2                 # Number of CPU cores per task
 #SBATCH --gres=gpu:1           # Request 1 GPU or a specific ie. a100_40gb:4, use freeResources to see which are open, then choose node after : 
 #SBATCH --time=24:00:00                   # Run time (hh:mm:ss) - run for 48 hours max
@@ -9,7 +9,11 @@
 #SBATCH --mail-type=FAIL,END              # Mail events (NONE, BEGIN, END, FAIL, ALL)
 
 module load singularity
-singularity exec --nv /opt/itu/containers/pytorch/latest python3 3xruns/3xruns_outputs/allnode_embeddings/var_plots.py 
+# Loop over the different dataset types
+for dataset_type in trained_no_norm trained_norm propagated_no_norm propagated_norm
+do
+    singularity exec --nv /opt/itu/containers/pytorch/latest python3 plotters/var_plots.py --dataset_type $dataset_type
+done
 
-#sbatch 3xruns/3xruns_outputs/allnode_embeddings/var_plots.job
+#sbatch plotters/var_plots.job
 

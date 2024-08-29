@@ -1,19 +1,41 @@
-# make variance plots for all node types in a specific directory
+# plot variance of features in final layer embeddings, change directory lcoation for different ones
+# do it per directory and save it for directory
 import os
 import glob
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import argparse
 
 # source here
-csv_directories = [
-    '3xruns/3xruns_outputs/allnode_embeddings_nonorm/dblp_rgcn',
-    '3xruns/3xruns_outputs/allnode_embeddings_nonorm/dblp_pnrgcn',
-    '3xruns/3xruns_outputs/allnode_embeddings_nonorm/imdb_rgcn',
-    '3xruns/3xruns_outputs/allnode_embeddings_nonorm/imdb_pnrgcn',
-]
 
-def plot_variance_from_csv(csv_files, output_filename, directory_name):
+csv_directories = {
+    'trained_no_norm': [
+        'results/train_embeddings/all_node_embeddings_no_norm/dblp_pnrgcn',
+        'results/train_embeddings/all_node_embeddings_no_norm/dblp_rgcn',
+        'results/train_embeddings/all_node_embeddings_no_norm/imdb_pnrgcn',
+        'results/train_embeddings/all_node_embeddings_no_norm/imdb_pnrgcn'
+    ],
+    'trained_norm': [
+        'results/train_embeddings/all_node_embeddings_norm/dblp_pnrgcn',
+        'results/train_embeddings/all_node_embeddings_norm/dblp_rgcn',
+        'results/train_embeddings/all_node_embeddings_norm/imdb_pnrgcn',
+        'results/train_embeddings/all_node_embeddings_norm/imdb_pnrgcn'
+    ],
+    'propagated_no_norm' : [
+        'results/prop_embeddings/all_node_embeddings_no_norm/dblp_pnrgcn',
+        'results/prop_embeddings/all_node_embeddings_no_norm/dblp_rgcn',
+        'results/prop_embeddings/all_node_embeddings_no_norm/imdb_pnrgcn',
+        'results/prop_embeddings/all_node_embeddings_no_norm/imdb_pnrgcn'
+    ],
+    'propagated_norm' : [
+        'results/prop_embeddings/all_node_embeddings_norm/dblp_pnrgcn',
+        'results/prop_embeddings/all_node_embeddings_norm/dblp_rgcn',
+        'results/prop_embeddings/all_node_embeddings_norm/imdb_pnrgcn',
+        'results/prop_embeddings/all_node_embeddings_norm/imdb_pnrgcn'
+    ]
+}
+def plot_variance_from_csv(csv_files, output_filename, plot_title):
     plt.figure(figsize=(12, 8))
     colors = plt.cm.rainbow(np.linspace(0, 1, len(csv_files)))
     
@@ -34,7 +56,7 @@ def plot_variance_from_csv(csv_files, output_filename, directory_name):
         plt.plot(range(1, len(variances) + 1), variances, marker='o', label=f'{num_hops} layers', color=color)
 
     # Title, labels, and legend with increased font size
-    plt.title(f'Variance of Features Across All Nodes, All Node Types for {directory_name}', fontsize=16)
+    plt.title(plot_title, fontsize=16)
     plt.xlabel('Feature Index', fontsize=14)
     plt.ylabel('Variance', fontsize=14)
     plt.legend(fontsize=12)
@@ -45,7 +67,16 @@ def plot_variance_from_csv(csv_files, output_filename, directory_name):
     plt.show()
 
 if __name__ == "__main__":
-    for csv_directory in csv_directories:
+    # Argument parsing
+    parser = argparse.ArgumentParser(description='Plot variance from CSV files in specified directory.')
+    parser.add_argument('--dataset_type', choices=['trained_no_norm', 'trained_norm', 'propagated_no_norm', 'propagated_norm'], required=True, help='Specify the dataset type to use.')
+
+    args = parser.parse_args()
+
+    # Get the selected CSV directories
+    selected_csv_directories = csv_directories[args.dataset_type]
+
+    for csv_directory in selected_csv_directories:
         csv_pattern = os.path.join(csv_directory, '*.csv')
         csv_files = glob.glob(csv_pattern)
         
@@ -56,10 +87,9 @@ if __name__ == "__main__":
             print("Warning: Sorting failed due to non-integer part. Sorting files by name.")
             csv_files = sorted(csv_files)
         
-        # Extract directory name for title
-        directory_name = os.path.basename(csv_directory)
-        
-        output_filename = os.path.join(csv_directory, 'feature_variance_plot.png')
+        # Determine output file name and plot title based on dataset type
+        output_filename = os.path.join(csv_directory, f'feature_variance_plot_{args.dataset_type}.png')
+        plot_title = f'Variance of Features Across All Nodes - {args.dataset_type.replace("_", " ").title()}'
         
         # Generate and save the plots
-        plot_variance_from_csv(csv_files, output_filename, directory_name)
+        plot_variance_from_csv(csv_files, output_filename, plot_title)
