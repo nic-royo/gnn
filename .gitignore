@@ -20,3 +20,4 @@ venv.bak/
 
 # files with dataset outputs
 results/
+outputs/
