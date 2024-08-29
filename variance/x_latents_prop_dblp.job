@@ -10,21 +10,21 @@
 #SBATCH --mem=80G
 
 module load singularity
-for num_hops in 8 16 32 64 
+for num_hops in 2 4 128
 do
-    for model_type in rgcn pnrgcn 
+    for model_type in rgcn pnrgcn
     do
-        singularity exec --nv /opt/itu/containers/pytorch/latest python3 3xruns/propagate/x_latents_prop.py \
+        singularity exec --nv /opt/itu/containers/pytorch/latest python3 variance/x_latents_prop.py \
         --dataset dblp \
         --data_root /tmp/ \
         --hidden_dim 64 \
         --num_hops $num_hops \
-        --embedding_option no_normalize \
+        --embedding_option normalize \
         --model_type $model_type \
         --use_all_nodes True \
         --node_types_option all_node_types
     done
 done
-#sbatch 3xruns/propagate/x_latents_prop_dblp.job
+#sbatch variance/x_latents_prop_dblp.job
 
 

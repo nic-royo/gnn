@@ -9,6 +9,6 @@
 #SBATCH --mail-type=FAIL,END              # Mail events (NONE, BEGIN, END, FAIL, ALL)
 
 module load singularity
-singularity exec --nv /opt/itu/containers/pytorch/latest python3 3xruns/embeddings_calc/merged_plot.py 
+singularity exec --nv /opt/itu/containers/pytorch/latest python3 plotters/merged_plot.py 
 
-#sbatch 3xruns/embeddings_calc/merged_plot.job
+#sbatch plotters/merged_plot.job

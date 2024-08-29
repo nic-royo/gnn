@@ -3,20 +3,20 @@
 #SBATCH --job-name=x_latents_plot    # Job name
 #SBATCH --output=outputs/x_latents_plot_imdb.%j.out # Name of output file (%j expands to jobId)
 #SBATCH --cpus-per-task=2                 # Number of CPU cores per task
-#SBATCH --gres=gpu:1          # Request 1 GPU or a specific ie. a100_40gb:4, use freeResources to see which are open, then choose node after : 
+#SBATCH --gres=gpu:rtx8000:2          # Request 1 GPU or a specific ie. a100_40gb:4, use freeResources to see which are open, then choose node after : 
 #SBATCH --time=24:00:00                   # Run time (hh:mm:ss) - run for 48 hours max
 #SBATCH --partition=brown                 # Partition name
 #SBATCH --mail-type=FAIL,END              # Mail events (NONE, BEGIN, END, FAIL, ALL)
 #SBATCH --mem=80G
 
 module load singularity
-for num_hops in 2 4
+for num_hops in 2 4 8 16 32 64 128
 do
-    for model_type in rgcn pnrgcn
+    for model_type in rgcn 
     do
-        for embedding_option in normalize no_normalize
+        for embedding_option in normalize 
         do
-            singularity exec --nv /opt/itu/containers/pytorch/latest python3 variance/x_latents_train_works.py \
+            singularity exec --nv /opt/itu/containers/pytorch/latest python3 variance/x_latents_train.py \
             --dataset imdb \
             --data_root /tmp/ \
             --hidden_dim 64 \

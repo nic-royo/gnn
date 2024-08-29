@@ -17,7 +17,7 @@ do
     do
         for embedding_option in normalize no_normalize
         do
-            singularity exec --nv /opt/itu/containers/pytorch/latest python3 variance/x_latents_train_works.py \
+            singularity exec --nv /opt/itu/containers/pytorch/latest python3 variance/x_latents_train.py \
             --dataset dblp \
             --data_root /tmp/ \
             --hidden_dim 64 \

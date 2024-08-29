@@ -315,6 +315,9 @@ def main(args):
     # Conditionally normalize the embeddings
     if args.embedding_option == 'normalize':
         x_latents = {node_type: F.normalize(x_latent, p=2, dim=1) for node_type, x_latent in x_latents.items()}
+        # can normalize along different dimensions, gives the same results
+        #x_latents = {node_type: F.normalize(x_latent, p=2, dim=0) for node_type, x_latent in x_latents.items()}
+
     
     # Convert embeddings to numpy arrays
     x_latents_np = {node_type: x_latent.detach().cpu().numpy() for node_type, x_latent in x_latents.items()}
@@ -343,8 +346,7 @@ def main(args):
     combined_df = pd.concat(all_embeddings, axis=0)
 
     # Construct the output directory and filename
-    output_dir = f"3xruns/3xruns_outputs/allnode_embeddings_nonorm/{args.dataset}_{args.model_type}"
-    #output_dir = f"3xruns/3xruns_outputs/allnode_embeddings/{args.dataset}_{args.model_type}"
+    output_dir = f"results/prop_embeddings/all_node_embeddings_norm/{args.dataset}_{args.model_type}"
     os.makedirs(output_dir, exist_ok=True)  # Create directory if it does not exist
 
     file_suffix = f"_{args.num_hops}_layer_all_nodes_{'norm' if args.embedding_option == 'normalize' else 'notnorm'}.csv"
