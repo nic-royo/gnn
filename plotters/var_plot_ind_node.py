@@ -96,7 +96,7 @@ if __name__ == "__main__":
         dataset_name, model_name = base_name.split('_')
 
         # setup plot title based on dataset type, model name, and dataset name
-        output_filename = os.path.join(plots_dir, f'feature_variance_plot_ind_node{args.dataset_type}_{dataset_name}_{model_name}.png')
+        output_filename = os.path.join(plots_dir, f'feature_variance_plot_ind_node{args.dataset_type}_{dataset_name}_{model_name}.svg')
         plot_title = f'Variance of Target Node Features - {args.dataset_type.replace("_", " ").title()} - {dataset_name.upper()} - {model_name.upper()}'
 
         plot_variance_from_csv(csv_files, output_filename, plot_title)

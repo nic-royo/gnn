@@ -97,7 +97,7 @@ if __name__ == "__main__":
         dataset_name, model_name = base_name.split('_')
 
         # Determine output file name and plot title based on dataset type, model name, and dataset name
-        output_filename = os.path.join(plots_dir, f'feature_variance_plot_{args.dataset_type}_{dataset_name}_{model_name}.png')
+        output_filename = os.path.join(plots_dir, f'feature_variance_plot_{args.dataset_type}_{dataset_name}_{model_name}.svg')
         plot_title = f'Variance of All Node Features - {args.dataset_type.replace("_", " ").title()} - {dataset_name.upper()} - {model_name.upper()}'
         
         # Generate and save the plots
