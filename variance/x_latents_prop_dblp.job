@@ -10,9 +10,9 @@
 #SBATCH --mem=80G
 
 module load singularity
-for num_hops in 2 4 128
+for num_hops in 2 4 8 16 32 64 128
 do
-    for model_type in rgcn pnrgcn
+    for model_type in ggrgcn
     do
         singularity exec --nv /opt/itu/containers/pytorch/latest python3 variance/x_latents_prop.py \
         --dataset dblp \

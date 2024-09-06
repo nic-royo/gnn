@@ -10,7 +10,7 @@
 
 module load singularity
 # Loop over the different dataset types
-for dataset_type in trained_norm propagated_norm
+for dataset_type in ggrgcn
 do
     singularity exec --nv /opt/itu/containers/pytorch/latest python3 plotters/var_plots.py --dataset_type $dataset_type
 done

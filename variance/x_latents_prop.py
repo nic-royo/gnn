@@ -302,6 +302,12 @@ def main(args):
     elif args.model_type == 'rgcn':
         model = RGCN(data.metadata(), args.hidden_dim, num_classes,
                      args.num_bases, num_layers=args.num_hops).to(device)
+    elif args.model_type == 'resrgcn':
+        model = resRGCN(data.metadata(), args.hidden_dim, num_classes,
+                     args.num_bases, num_layers=args.num_hops).to(device)
+    elif args.model_type == 'ggrgcn':
+        model = ggRGCN(data.metadata(), args.hidden_dim, num_classes,
+                     args.num_bases, num_layers=args.num_hops).to(device)
     else:
         print("Model not found")
         return  # Exit the function if the model is not found
@@ -365,7 +371,7 @@ if __name__ == "__main__":
     parser.add_argument('--num_bases', type=int, default=None, help='Number of bases for RGCN')
     parser.add_argument('--num_hops', type=int, default=32, help='Number of hops in RGCN')
     parser.add_argument('--embedding_option', type=str, required=True, choices=['normalize', 'no_normalize'], help='Option to either normalize or not normalize the embeddings')
-    parser.add_argument('--model_type', type=str, default='rgcn', choices=['rgcn', 'pnrgcn'], help='Type of RGCN model to use')
+    parser.add_argument('--model_type', type=str, default='rgcn', choices=['rgcn', 'pnrgcn', 'resrgcn', 'ggrgcn'], help='Type of RGCN model to use')
     parser.add_argument('--use_all_nodes', type=lambda x: x.lower() == 'true', default=True, help='Whether to use all nodes or a random sample of 50 nodes')
     parser.add_argument('--node_types_option', type=str, default='all_node_types', choices=['all_node_types', 'target_node_type'], help='Whether to save embeddings for all node types or just the target node type')
 

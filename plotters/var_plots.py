@@ -33,6 +33,12 @@ csv_directories = {
         'results/prop_embeddings/all_node_embeddings_norm/imdb_pnrgcn',
         'results/prop_embeddings/all_node_embeddings_norm/imdb_rgcn'
     ],
+    'resrgcn' : [
+        'results/prop_embeddings/all_node_embeddings_norm/dblp_resrgcn',
+    ],
+    'ggrgcn' : [
+        'results/prop_embeddings/all_node_embeddings_norm/dblp_ggrgcn',
+    ]
     #'diff_norm' : [
     #    'results/diff_norm'
     #],
@@ -69,7 +75,7 @@ def plot_variance_from_csv(csv_files, output_filename, plot_title):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Plot variance from CSV files in specified directory.')
-    parser.add_argument('--dataset_type', choices=['trained_no_norm', 'trained_norm', 'propagated_no_norm', 'propagated_norm', 'diff_norm'], required=True, help='Specify the dataset type to use.')
+    parser.add_argument('--dataset_type', choices=['trained_no_norm', 'trained_norm', 'propagated_no_norm', 'propagated_norm', 'diff_norm', 'resrgcn', 'ggrgcn'], required=True, help='Specify the dataset type to use.')
 
     args = parser.parse_args()
 
