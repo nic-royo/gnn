@@ -1,0 +1,12 @@
+#!/bin/bash
+
+#SBATCH --job-name=x_latents_plot    # Job name
+#SBATCH --output=../outputs/plot.%j.out # Name of output file (%j expands to jobId)
+#SBATCH --cpus-per-task=8              # Number of CPU cores per task
+#SBATCH --time=24:00:00                   # Run time (hh:mm:ss) - run for 48 hours max
+#SBATCH --partition=brown                 # Partition name
+#SBATCH --mail-type=FAIL,END              # Mail events (NONE, BEGIN, END, FAIL, ALL)
+#SBATCH --mem=30G
+
+module load singularity
+singularity exec --nv /opt/itu/containers/pytorch/latest python3 energies_two_hop_plots.py

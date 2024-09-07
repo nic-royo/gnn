@@ -1,0 +1,23 @@
+#!/bin/bash
+
+#SBATCH --job-name=container-gpu    # Job name
+#SBATCH --output=outputs/plot_gen.%j.out       # Name of output file (%j expands to jobId)
+#SBATCH --cpus-per-task=4
+#SBATCH --gres=gpu:1        # Schedule 8 cores (includes hyperthreading)            # Schedule a GPU, or more with gpu:2 etc
+#SBATCH --time=01:00:00          # Run time (hh:mm:ss) - run for one hour max
+#SBATCH --partition=brown,short
+#SBATCH --reservation=desktop27
+#SBATCH --mem=8G
+#SBATCH --mail-type=FAIL, END
+
+module load singularity
+names=('rgcn' 'pnrgcn' 'resrgcn' 'ggrgcn')
+for name in "${names[@]}"; do
+    singularity exec --nv /opt/itu/containers/pytorch/latest python3 run_energies.py \
+        --dataset dblp \
+        --data_root /tmp/ \
+        --hidden_dim 64 \
+        --num_hops 128 \
+        --model_type $name
+
+done

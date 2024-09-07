@@ -1,0 +1,12 @@
+#!/bin/bash
+
+#SBATCH --job-name=energies    # Job name
+#SBATCH --output=../outputs/plots_norm_job.%j.out # Name of output file (%j expands to jobId)
+#SBATCH --cpus-per-task=8              # Number of CPU cores per task          # Request 1 GPU or a specific ie. a100_40gb:4, use freeResources to see which are open, then choose node after :
+#SBATCH --time=24:00:00                   # Run time (hh:mm:ss) - run for 48 hours max
+#SBATCH --partition=brown,red         # Partition name
+#SBATCH --mail-type=FAIL,END              # Mail events (NONE, BEGIN, END, FAIL, ALL)
+#SBATCH --mem=60G
+
+module load singularity
+singularity exec /opt/itu/containers/pytorch/latest python3 plot_clipping_exp.py
