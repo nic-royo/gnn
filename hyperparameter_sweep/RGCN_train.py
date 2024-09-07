@@ -183,11 +183,10 @@ def main(args):
     target_node_type = get_target_node_type(args.dataset)
     num_classes = get_num_classes(data, target_node_type)
     
-    # Move data to GPU if available
+    # Move data to GPU if available, sometimes if unkonw error change this
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     data = data.to(device)
 
-    # Create model
     model = RGCN(data.metadata(), args.hidden_dim, num_classes, 
                  args.num_bases, dropout=args.dropout, num_layers=args.num_hops).to(device)
 
@@ -232,7 +231,7 @@ def main(args):
     
     best_f1 = 0
     best_model = None
-    epochs_since_improvement = 0  # Track the number of epochs since last improvement
+    epochs_since_improvement = 0  
 
     for epoch in range(args.num_epochs):
         loss = train()
@@ -248,9 +247,9 @@ def main(args):
         if f1 > best_f1:
             best_f1 = f1
             best_model = model.state_dict()
-            epochs_since_improvement = 0  # Reset the counter when improvement is seen
+            epochs_since_improvement = 0  
         else:
-            epochs_since_improvement += 1  # Increment the counter if no improvement
+            epochs_since_improvement += 1  
 
         if epochs_since_improvement >= args.patience:
             print(f'Early stopping at epoch {epoch+1:03d} due to no improvement in the last {args.patience} epochs.')
@@ -259,13 +258,11 @@ def main(args):
         if (epoch + 1) % args.print_every == 0:
             print(f'Epoch: {epoch+1:03d}, Loss: {loss:.4f}, Test Acc: {acc:.4f}, Test F1-Score: {f1:.4f}')
 
-    # Load the best model
     model.load_state_dict(best_model)
 
-    # Calculate and log Dirichlet energy only once, after training
     d_energies_log = model.eval_oversmoothing(data.x_dict, data)
     
-    # Save the numpy array to a file
+    # Save the energies
     #np.save('de_energies/baseRGCN_d_energies_log.npy', d_energies_log)
 
     wandb.log({

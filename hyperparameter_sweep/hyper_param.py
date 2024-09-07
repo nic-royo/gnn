@@ -1,10 +1,10 @@
 import wandb
-from RGCN_train import main  # Import the main function from your original script
+from RGCN_train import main 
 import argparse
 
 def sweep():
     sweep_config = {
-        'method': 'bayes',  # Change to grid search
+        'method': 'bayes',  # Change to grid search or anything we want
         'metric': {
             'name': 'f1_score',
             'goal': 'maximize'
@@ -24,10 +24,8 @@ def sweep():
     sweep_id = wandb.sweep(sweep_config, project=f"Hyper_search-{args.dataset}")
 
     def train():
-        # Initialize with the same project name, but allow for different runs
         wandb.init(project=f"rgcn_base-{args.dataset}", group="rgcn_baseline")
         
-        # Update args with values from sweep
         args.hidden_dim = wandb.config.hidden_dim
         args.num_bases = wandb.config.num_bases
         args.dropout = wandb.config.dropout

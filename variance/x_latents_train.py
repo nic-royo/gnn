@@ -184,7 +184,7 @@ def train_model(model, data, target_node_type, epochs=10, learning_rate=0.01):
             best_f1 = f1
             best_model = model.state_dict()
 
-    # Load the best model
+    # load the best model
     model.load_state_dict(best_model)
 
 
@@ -197,7 +197,6 @@ def main(args):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     data = data.to(device)
 
-    # Create model
     if args.model_type == 'pnrgcn':
         model = pairnormRGCN(data.metadata(), args.hidden_dim, num_classes,
                              args.num_bases, dropout=args.dropout, num_layers=args.num_hops).to(device)
@@ -206,11 +205,10 @@ def main(args):
                      args.num_bases, dropout=args.dropout, num_layers=args.num_hops).to(device)
     else:
         print("Model not found")
-        return  # Exit the function if the model is not found
+        return  
 
     print(model)
 
-    # Training the model
     print("Training the model...")
     train_model(model, data, target_node_type, epochs=args.epochs, learning_rate=args.learning_rate)
 
@@ -224,12 +222,10 @@ def main(args):
 
     x_latents_np = [x_latent.detach().cpu().numpy() for x_latent in x_latents]
 
-    # Create the output directory if it doesn't exist
     output_dir = os.path.join('results', 'train_embeddings')
     os.makedirs(output_dir, exist_ok=True)
 
-    # Save embeddings only for the last layer (layer 32 when num_hops is 32)
-    layer = args.num_hops - 1  # Get the index of the last layer
+    layer = args.num_hops - 1  
     start_idx = 0
     all_embeddings = []
     
@@ -246,14 +242,11 @@ def main(args):
         
         start_idx = end_idx
     
-    # Concatenate all embeddings for the last layer
     combined_df = pd.concat(all_embeddings, ignore_index=True)
     
-    # Generate the file name
     file_suffix = f"_{args.model_type}_{args.num_hops}_layer_all_nodes_{'norm' if args.embedding_option == 'normalize' else 'notnorm'}.csv"
     csv_filename = os.path.join(output_dir, f"{args.dataset}_layer_{args.num_hops}{file_suffix}")
 
-    # Save the CSV file
     combined_df.to_csv(csv_filename, index=False)
     print(f"Saved embeddings for layer {args.num_hops} to {csv_filename}")
 

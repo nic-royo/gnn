@@ -285,7 +285,6 @@ def main(args):
     for run in range(3):
         print(f"Starting run {run + 1}")
 
-        # Create model
         if args.model_type == 'pnrgcn':
             model = pairnormRGCN(data.metadata(), args.hidden_dim, num_classes,
                                  args.num_bases, dropout=args.dropout, num_layers=args.num_hops).to(device)
@@ -363,7 +362,7 @@ def main(args):
                 print(f'Early stopping at epoch {epoch+1:03d} due to no improvement in the last {args.patience} epochs.')
                 break
 
-        # Load the best model and get its scores
+        # load the best model
         model.load_state_dict(best_model)
         best_micro_f1, best_macro_f1 = test()
         best_micro_f1_scores.append(best_micro_f1)
@@ -371,7 +370,6 @@ def main(args):
 
         print(f'Run {run + 1} - Final Test Micro F1-Score: {best_micro_f1:.4f}, Macro F1-Score: {best_macro_f1:.4f}')
 
-    # Calculate mean and variance
     micro_f1_mean = np.mean(best_micro_f1_scores)
     micro_f1_var = np.var(best_micro_f1_scores)
     macro_f1_mean = np.mean(best_macro_f1_scores)

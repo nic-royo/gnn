@@ -261,7 +261,7 @@ def generate_random_features(data):
     torch.manual_seed(2105)
     for node_type in data.node_types:
         num_nodes = data[node_type].num_nodes
-        feature_dim = 128  # You can make this an argument if you want to vary it
+        feature_dim = 128  
         data[node_type].x = torch.randn((num_nodes, feature_dim))
     return data
 
@@ -281,21 +281,18 @@ def propagate_embeddings(model, data, node_types_option, target_node_type):
         raise ValueError(f"Invalid node_types_option: {node_types_option}")
     
 def main(args):
-    # Load dataset
     data = load_dataset(args.dataset, root=args.data_root)
     data = generate_random_features(data)
 
-    # Get target node type and number of classes
+    # get target node type and number of classes
     target_node_type = get_target_node_type(args.dataset)
     num_classes = get_num_classes(data, target_node_type)
 
-    # Set device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     data = data.to(device)
 
     pyg.seed_everything(seed=42)
 
-    # Create model
     if args.model_type == 'pnrgcn':
         model = pairnormRGCN(data.metadata(), args.hidden_dim, num_classes,
                              args.num_bases, num_layers=args.num_hops).to(device)
@@ -310,7 +307,7 @@ def main(args):
                      args.num_bases, num_layers=args.num_hops).to(device)
     else:
         print("Model not found")
-        return  # Exit the function if the model is not found
+        return  
     
     print(model)
 
@@ -332,17 +329,15 @@ def main(args):
     all_node_indices = []
 
     for node_type, embeddings in x_latents_np.items():
-        # Select node indices
         num_nodes = data[node_type].num_nodes
         if args.use_all_nodes:
             node_indices = torch.arange(num_nodes)
         else:
             node_indices = torch.randperm(num_nodes)[:50]
 
-        # Get final layer embeddings
         final_layer_embeddings = embeddings[node_indices]
         
-        # Create DataFrame with node type and embeddings
+        # make DataFrame with node type and embeddings
         df = pd.DataFrame(final_layer_embeddings, index=[f'{node_type}_Node_{i}' for i in node_indices])
         df['Node_Type'] = node_type  # Add a column for node type
         all_embeddings.append(df)
@@ -351,14 +346,12 @@ def main(args):
     # Combine all DataFrames into one
     combined_df = pd.concat(all_embeddings, axis=0)
 
-    # Construct the output directory and filename
     output_dir = f"results/prop_embeddings/all_node_embeddings_norm/{args.dataset}_{args.model_type}"
-    os.makedirs(output_dir, exist_ok=True)  # Create directory if it does not exist
+    os.makedirs(output_dir, exist_ok=True)  
 
     file_suffix = f"_{args.num_hops}_layer_all_nodes_{'norm' if args.embedding_option == 'normalize' else 'notnorm'}.csv"
     csv_filename = os.path.join(output_dir, f"{args.dataset}_{args.model_type}{file_suffix}")
 
-    # Save the combined DataFrame to CSV
     combined_df.to_csv(csv_filename)
 
     print(f'All node embeddings saved to {csv_filename}')

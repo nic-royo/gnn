@@ -1,3 +1,4 @@
+# code for making the 'minecraft water plots' for randomly sampled node embeddings accross layers
 import os
 import glob
 import pandas as pd
@@ -35,7 +36,7 @@ def plot_embeddings_from_csv(csv_files, output_filename, dataset_name, model_nam
         # Plot using heatmap
         sns.heatmap(sampled_df, cmap='coolwarm', cbar=False, ax=ax, xticklabels=False, yticklabels=False)
         
-        # Set title based on the num_layers (extracted from the filename)
+        # Set title based on the num_layers (which us extracted from the filename)
         num_hops = 'Unknown'
         basename = os.path.basename(csv_file)
         parts = basename.split('_')
@@ -44,11 +45,11 @@ def plot_embeddings_from_csv(csv_files, output_filename, dataset_name, model_nam
                 num_hops = part
                 break
 
-        ax.set_title(f'{num_hops} Layers', fontsize=26)  # Adjust title font size
-        ax.set_xlabel("Features", fontsize=26)  # Adjust xlabel font size
-        ax.set_ylabel("Nodes", fontsize=26)  # Adjust ylabel font size
+        ax.set_title(f'{num_hops} Layers', fontsize=26)  
+        ax.set_xlabel("Features", fontsize=26)  
+        ax.set_ylabel("Nodes", fontsize=26)  
 
-        # Remove y-axis ticks and labels
+        # Remove y-axis ticks and labels, otherwise gets very messy with 50
         ax.yaxis.set_ticks([])
         ax.yaxis.set_tick_params(length=0)  
 
@@ -56,7 +57,7 @@ def plot_embeddings_from_csv(csv_files, output_filename, dataset_name, model_nam
     dataset_name_upper = dataset_name.upper()
     model_name_upper = model_name.upper()
     general_title = f'Visualization of 50 Randomly Sampled Target Nodes, Trained Norm - {dataset_name_upper} - {model_name_upper}'
-    plt.suptitle(general_title, fontsize=30)  # Adjust general title font size
+    plt.suptitle(general_title, fontsize=30)  
 
     # Adjust layout
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])  
@@ -72,7 +73,7 @@ if __name__ == "__main__":
         'results/train_embeddings/all_node_embeddings_norm/imdb_rgcn'
     ]
 
-    # Layers of interest
+    # Layers of interest, change ig we want more
     layers_of_interest = {8, 16, 32}
 
     for csv_directory in csv_directories:
@@ -81,7 +82,7 @@ if __name__ == "__main__":
         dataset_name = directory_parts[-1].split('_')[0]  # 'dblp' or 'imdb'
         model_name = directory_parts[-1].split('_')[1]  # 'pnrgcn' or 'rgcn'
         
-        # Pattern to match all CSV files
+        # Use a pattern to match all CSV files
         csv_pattern = os.path.join(csv_directory, '*.csv')
         csv_files = glob.glob(csv_pattern)
         

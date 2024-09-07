@@ -11,7 +11,7 @@
 #SBATCH --reservation=desktop27
 
 module load singularity
-export WANDB_API_KEY=4e8cb6191f0ce50becd1fde96d5c4caf25f6ecfc
+export WANDB_API_KEY=keyhere
 
 singularity exec --nv /opt/itu/containers/pytorch/latest python3 rgcn_base/hyper_param.py \
   --dataset mag \
